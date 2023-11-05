@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 
-@SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
+@SpringBootApplication(exclude = { SecurityAutoConfiguration.class })
 public class SecurecapitaServerApplication {
 
     private static final int STRENGTH = 12;

@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.ibm.securecapitaserver.enumeration.RoleType.ROLE_USER;
-import static com.ibm.securecapitaserver.query.RoleQuery.INSERT_ROLE_TO_USER_QUERY;
-import static com.ibm.securecapitaserver.query.RoleQuery.SELECT_ROLE_BY_NAME_QUERY;
+import static com.ibm.securecapitaserver.query.RoleQuery.*;
+import static java.util.Map.of;
 import static java.util.Objects.requireNonNull;
 
 @Repository
@@ -55,19 +55,26 @@ public class RoleRepositoryImpl implements RoleRepository {
     public void addRoleToUser(Long userId, String roleName) {
         log.info("Adding role {} to user id: {}", roleName, userId);
         try {
-            Role role = jdbc.queryForObject(SELECT_ROLE_BY_NAME_QUERY, Map.of("roleName", roleName), new RoleRowMapper());
-            jdbc.update(INSERT_ROLE_TO_USER_QUERY, Map.of("userId", userId, "roleId", requireNonNull(role).getId()));
+            Role role = jdbc.queryForObject(SELECT_ROLE_BY_NAME_QUERY, of("roleName", roleName), new RoleRowMapper());
+            jdbc.update(INSERT_ROLE_TO_USER_QUERY, of("userId", userId, "roleId", requireNonNull(role).getId()));
         } catch (EmptyResultDataAccessException exception) {
             throw new ApiException("No role found by name: " + ROLE_USER.name());
         } catch (Exception exception) {
             throw new ApiException("An error occurred. Please try again.");
         }
-
     }
 
     @Override
     public Role getRoleByUserId(Long userId) {
-        return null;
+        log.info("Fetching role for user id: {}", userId);
+        try {
+            return jdbc.queryForObject(SELECT_ROLE_BY_ID_QUERY, of("id", userId), new RoleRowMapper());
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("No role found by name: " + ROLE_USER.name());
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
     }
 
     @Override
