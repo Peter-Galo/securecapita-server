@@ -16,4 +16,10 @@ public class UserQuery {
             FROM Users
             WHERE id = (SELECT user_id FROM TwoFactorVerifications WHERE code = :code)
             """;
+
+    public static final String SELECT_CODE_EXPIRATION_QUERY = """
+            SELECT expiration_date < NOW() AS is_expired
+            FROM TwoFactorVerifications
+            WHERE code = :code
+            """;
 }
