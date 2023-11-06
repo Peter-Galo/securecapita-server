@@ -159,4 +159,25 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             throw new ApiException("An error occurred. Please try again.");
         }
     }
+
+    @Override
+    public User verifyCode(String email, String code) {
+
+        try {
+            User userByCode = jdbc.queryForObject(SELECT_USER_BY_USER_CODE_QUERY, Map.of("code", code), new UserRowMapper());
+            User userByEmail = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, Map.of("email", email), new UserRowMapper());
+
+            if (userByCode.getEmail().equalsIgnoreCase(userByEmail.getEmail())) {
+                jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID_QUERY, Map.of("id", userByCode.getId()));
+                return userByCode;
+            } else {
+                throw new ApiException("Code is invalid. Please try again.");
+            }
+
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("Could not find a record.");
+        } catch (Exception exception) {
+            throw new ApiException("An exception occured");
+        }
+    }
 }

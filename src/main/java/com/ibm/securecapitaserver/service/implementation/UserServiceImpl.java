@@ -8,6 +8,8 @@ import com.ibm.securecapitaserver.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import static com.ibm.securecapitaserver.dtomapper.UserDTOMapper.fromUser;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -15,12 +17,12 @@ public class UserServiceImpl implements UserService {
     private final UserRepository<User> userRepository;
     @Override
     public UserDTO createUser(User user) {
-        return UserDTOMapper.fromUser(userRepository.create(user));
+        return fromUser(userRepository.create(user));
     }
 
     @Override
     public UserDTO getUserByEmail(String email) {
-        return UserDTOMapper.fromUser(userRepository.getUserByEmail(email));
+        return fromUser(userRepository.getUserByEmail(email));
     }
 
     @Override
@@ -31,5 +33,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUser(String email) {
         return userRepository.getUserByEmail(email);
+    }
+
+    @Override
+    public UserDTO verifyCode(String email, String code) {
+        return fromUser(userRepository.verifyCode(email, code));
     }
 }
