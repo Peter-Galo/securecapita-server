@@ -2,8 +2,11 @@ package com.ibm.securecapitaserver.resource;
 
 import com.ibm.securecapitaserver.domain.HttpResponse;
 import com.ibm.securecapitaserver.domain.User;
+import com.ibm.securecapitaserver.domain.UserPrincipal;
 import com.ibm.securecapitaserver.dto.UserDTO;
 import com.ibm.securecapitaserver.form.LoginForm;
+import com.ibm.securecapitaserver.provider.TokenProvider;
+import com.ibm.securecapitaserver.service.RoleService;
 import com.ibm.securecapitaserver.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +33,9 @@ import static org.springframework.http.HttpStatus.OK;
 public class UserResource {
 
     private final UserService userService;
+    private final RoleService roleService;
     private final AuthenticationManager authenticationManager;
+    private final TokenProvider tokenProvider;
 
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm) {
@@ -62,11 +67,19 @@ public class UserResource {
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(of("user", user))
+                        .data(of(
+                                "user", user,
+                                "access_token", tokenProvider.createAccessToken(getUserPrincipal(user)),
+                                "refresh_token", tokenProvider.createRefreshToken(getUserPrincipal(user))))
+
                         .message("Login Success")
                         .status(OK)
                         .statusCode(OK.value())
                         .build());
+    }
+
+    private UserPrincipal getUserPrincipal(UserDTO user) {
+        return new UserPrincipal(userService.getUser(user.getEmail()), roleService.getRoleByUserId(user.getId()).getPermission());
     }
 
     private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO user) {
