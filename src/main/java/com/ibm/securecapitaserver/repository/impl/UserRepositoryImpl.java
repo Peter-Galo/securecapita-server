@@ -3,12 +3,14 @@ package com.ibm.securecapitaserver.repository.impl;
 import com.ibm.securecapitaserver.domain.Role;
 import com.ibm.securecapitaserver.domain.User;
 import com.ibm.securecapitaserver.domain.UserPrincipal;
+import com.ibm.securecapitaserver.dto.UserDTO;
 import com.ibm.securecapitaserver.exception.ApiException;
 import com.ibm.securecapitaserver.repository.RoleRepository;
 import com.ibm.securecapitaserver.repository.UserRepository;
 import com.ibm.securecapitaserver.rowmapper.UserRowMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -23,13 +25,18 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
 import static com.ibm.securecapitaserver.enumeration.RoleType.ROLE_USER;
 import static com.ibm.securecapitaserver.enumeration.VerificationType.ACCOUNT;
 import static com.ibm.securecapitaserver.query.UserQuery.*;
+import static com.ibm.securecapitaserver.utils.SmsUtils.sendSms;
 import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.apache.commons.lang3.time.DateFormatUtils.format;
+import static org.apache.commons.lang3.time.DateUtils.addDays;
 
 @Repository
 @RequiredArgsConstructor
@@ -37,9 +44,11 @@ import static java.util.Objects.requireNonNull;
 public class UserRepositoryImpl implements UserRepository<User>, UserDetailsService {
 
 
+    private static final String DATE_FORMAT = "yyyy-MM-dd hh:mm:ss";
     private final NamedParameterJdbcTemplate jdbc;
     private final RoleRepository<Role> roleRepository;
     private final BCryptPasswordEncoder encoder;
+    private final Environment environment;
 
     @Override
     public User create(User user) {
@@ -98,7 +107,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
                 .addValue("password", encoder.encode(user.getPassword()));
     }
 
-    private String getVerificationUrl(String key, String type){
+    private String getVerificationUrl(String key, String type) {
         return ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/verify/" + type + "/" + key).toUriString();
     }
 
@@ -106,7 +115,7 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
         User user = getUserByEmail(email);
-        if(user == null) {
+        if (user == null) {
             log.error("User [{}] not found in database", email);
             throw new UsernameNotFoundException("User " + email + " not found in database");
         } else {
@@ -122,6 +131,29 @@ public class UserRepositoryImpl implements UserRepository<User>, UserDetailsServ
             return user;
         } catch (EmptyResultDataAccessException exception) {
             throw new ApiException("No User found by email: " + email);
+        } catch (Exception exception) {
+            log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
+
+    @Override
+    public void sendVerificationCode(UserDTO user) {
+        String expirationDate = format(addDays(new Date(), 1), DATE_FORMAT);
+        String verificationCode = randomAlphabetic(8).toUpperCase();
+
+        try {
+            jdbc.update(DELETE_VERIFICATION_CODE_BY_USER_ID_QUERY, Map.of("id", user.getId()));
+            jdbc.update(INSERT_VERIFICATION_CODE_QUERY, Map.of(
+                    "userId", user.getId(),
+                    "code", verificationCode,
+                    "expirationDate", expirationDate));
+
+            String fromNumber = environment.getProperty("twilio.from_number");
+            String sidKey = environment.getProperty("twilio.sid_key");
+            String tokenKey = environment.getProperty("twilio.token_key");
+
+            sendSms(user.getPhone(), fromNumber, "From SecureCapita\nVerification Code\n" + verificationCode, sidKey, tokenKey);
         } catch (Exception exception) {
             log.error(exception.getMessage());
             throw new ApiException("An error occurred. Please try again.");

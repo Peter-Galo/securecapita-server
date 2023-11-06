@@ -1,6 +1,7 @@
 package com.ibm.securecapitaserver.repository;
 
 import com.ibm.securecapitaserver.domain.User;
+import com.ibm.securecapitaserver.dto.UserDTO;
 
 import java.util.Collection;
 
@@ -19,4 +20,5 @@ public interface UserRepository<T extends User> {
     /* More Complex Operations */
     User getUserByEmail(String email);
 
+    void sendVerificationCode(UserDTO user);
 }
