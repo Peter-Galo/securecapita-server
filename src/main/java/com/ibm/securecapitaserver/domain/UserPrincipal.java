@@ -1,5 +1,6 @@
 package com.ibm.securecapitaserver.domain;
 
+import com.ibm.securecapitaserver.dto.UserDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -8,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+import static com.ibm.securecapitaserver.dtomapper.UserDTOMapper.fromUser;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 
@@ -15,11 +17,11 @@ import static java.util.stream.Collectors.toList;
 public class UserPrincipal implements UserDetails {
 
     private final User user;
-    private final String permissions;
+    private final Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return stream(permissions.split(",".trim())).map(SimpleGrantedAuthority::new).collect(toList());
+        return stream(role.getPermission().split(",".trim())).map(SimpleGrantedAuthority::new).collect(toList());
     }
 
     @Override
@@ -50,5 +52,9 @@ public class UserPrincipal implements UserDetails {
     @Override
     public boolean isEnabled() {
         return user.isEnabled();
+    }
+
+    public UserDTO getUser() {
+        return fromUser(this.user, role);
     }
 }

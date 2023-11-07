@@ -7,7 +7,9 @@ import com.auth0.jwt.exceptions.InvalidClaimException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.ibm.securecapitaserver.domain.UserPrincipal;
+import com.ibm.securecapitaserver.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,7 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class TokenProvider {
 
     public static final String AUTHORITIES = "authorities";
@@ -36,6 +39,8 @@ public class TokenProvider {
     private static final String AUDIENCE = "CUSTOMER_MANAGEMENT_SERVICE";
     private static final long ACCESS_TOKEN_EXPIRATION_TIME = 1_800_000;
     private static final long REFRESH_TOKEN_EXPIRATION_TIME = 432_000_000;
+
+    private final UserService userService;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -89,7 +94,7 @@ public class TokenProvider {
     }
 
     public Authentication getAuthentication(String email, List<GrantedAuthority> authorities, HttpServletRequest request) {
-        UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(email, null, authorities);
+        UsernamePasswordAuthenticationToken userPasswordAuthToken = new UsernamePasswordAuthenticationToken(userService.getUserByEmail(email), null, authorities);
         userPasswordAuthToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         return userPasswordAuthToken;
