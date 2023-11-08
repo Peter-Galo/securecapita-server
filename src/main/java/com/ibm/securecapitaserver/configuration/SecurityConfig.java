@@ -25,13 +25,16 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private static final String[] PUBLIC_URLS = {
+            "/user/register/**", "/user/login/**",
+            "/user/verify/code/**", "/user/verify/account/**",
+            "/user/verify/password/**", "/user/resetpassword/**",
+            "/user/refresh/token/**"};
     private final BCryptPasswordEncoder encoder;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final UserDetailsService userDetailsService;
     private final CustomAuthorizationFilter customAuthorizationFilter;
-
-    private static final String[] PUBLIC_URLS = { "/user/register/**", "/user/login/**", "/user/verify/code/**" };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

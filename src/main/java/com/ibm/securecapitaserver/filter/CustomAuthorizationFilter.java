@@ -31,8 +31,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
     public static final String TOKEN_KEY = "token";
     public static final String EMAIL_KEY = "email";
-    private static final String TOKEN_PREFIX = "Bearer ";
-    private static final String[] PUBLIC_ROUTES = { "/user/register", "/user/login", "/user/verify/code" };
+    public static final String TOKEN_PREFIX = "Bearer ";
+    private static final String[] PUBLIC_ROUTES = { "/user/register", "/user/login", "/user/verify/code", "/user/refresh/token" };
     protected static final String HTTP_OPTIONS_METHOD = "OPTIONS";
 
     private final TokenProvider tokenProvider;
